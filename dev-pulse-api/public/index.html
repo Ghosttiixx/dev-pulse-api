@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevPulse — System Dashboard</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background-color: #0b0f19;
+            color: #e2e8f0;
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .title-group h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+        }
+
+        .grid-top {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .info-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .info-label {
+            color: #64748b;
+        }
+
+        .info-value {
+            color: #f1f5f9;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .metric-big {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #a855f7;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: #1f2937;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #ec4899);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .disk-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #1f2937;
+        }
+
+        .disk-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .disk-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+        }
+
+        .chart-card {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="title-group">
+            <span class="subtitle">DevPulse — System Dashboard</span>
+            <h1>DevPulse Dashboard</h1>
+        </div>
+        <div class="status-badge" id="status-badge">
+            <span class="status-dot"></span>
+            <span id="status-text">LIVE MONITORING</span>
+        </div>
+    </div>
+
+    <div class="grid-top">
+      
+        <div class="card">
+            <div class="card-title">Система</div>
+            <div class="info-list">
+                <div class="info-item">
+                    <span class="info-label">ОС:</span>
+                    <span class="info-value" id="os-distro">Загрузка...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Процессор:</span>
+                    <span class="info-value" id="cpu-model">Загрузка...</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Ядер:</span>
+                    <span class="info-value" id="cpu-cores">---</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Uptime сервера:</span>
+                    <span class="info-value" id="server-uptime">--- сек</span>
+                </div>
+            </div>
+        </div>
+
+      
+        <div class="card">
+            <div class="card-title">Оперативная память (RAM)</div>
+            <div class="metric-big" id="ram-percent">0%</div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="ram-bar"></div>
+            </div>
+            <div class="info-list">
+                <div class="info-item">
+                    <span class="info-label">Использовано:</span>
+                    <span class="info-value"><span id="ram-used">0</span> GB</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Всего:</span>
+                    <span class="info-value"><span id="ram-total">0</span> GB</span>
+                </div>
+            </div>
+        </div>
+
+       
+        <div class="card">
+            <div class="card-title">Накопители</div>
+            <div id="disk-list" class="info-list">
+                <div class="info-item"><span class="info-label">Поиск дисков...</span></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="chart-card">
+        <div class="card-title">Загрузка процессора в реальном времени (%)</div>
+        <div class="chart-container">
+            <canvas id="cpuChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+      
+        const ctx = document.getElementById('cpuChart').getContext('2d');
+        const cpuChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array(30).fill(''),
+                datasets: [{
+                    label: 'Загрузка CPU (%)',
+                    data: Array(30).fill(0),
+                    borderColor: '#a855f7',
+                    backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: '#1f2937' },
+                        ticks: { color: '#64748b' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                },
+                animation: { duration: 0 }
+            }
+        });
+
+    
+        fetch('/api/v1/static-system')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('os-distro').innerText = `${data.os.distro} (${data.os.arch})`;
+                document.getElementById('cpu-model').innerText = data.cpu.brand;
+                document.getElementById('cpu-cores').innerText = `${data.cpu.cores} cores`;
+            })
+            .catch(() => {
+                document.getElementById('os-distro').innerText = 'Ошибка получения данных';
+            });
+
+       
+        function connectStream() {
+            const eventSource = new EventSource('/api/v1/stream');
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'system_stats') {
+                    updateDashboard(data);
+                }
+            };
+
+            eventSource.onerror = function() {
+                document.getElementById('status-badge').style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                document.getElementById('status-badge').style.background = 'rgba(239, 68, 68, 0.1)';
+                document.getElementById('status-badge').style.color = '#ef4444';
+                document.getElementById('status-text').innerText = 'OFFLINE (RECONNECTING...)';
+                
+                eventSource.close();
+                setTimeout(connectStream, 3000);
+            };
+        }
+
+      
+        function updateDashboard(data) {
+     
+            document.getElementById('status-badge').style.borderColor = 'rgba(16, 185, 129, 0.2)';
+            document.getElementById('status-badge').style.background = 'rgba(16, 185, 129, 0.1)';
+            document.getElementById('status-badge').style.color = '#10b981';
+            document.getElementById('status-text').innerText = 'LIVE MONITORING';
+
+        
+            document.getElementById('server-uptime').innerText = `${Math.round(data.uptime)} сек`;
+
+          
+            document.getElementById('ram-percent').innerText = `${data.ram.percent}%`;
+            document.getElementById('ram-bar').style.width = `${data.ram.percent}%`;
+            document.getElementById('ram-used').innerText = data.ram.usedGB;
+            document.getElementById('ram-total').innerText = data.ram.totalGB;
+
+            
+            cpuChart.data.datasets[0].data.push(data.cpu.load);
+            cpuChart.data.datasets[0].data.shift();
+            cpuChart.update();
+
+            
+            const diskContainer = document.getElementById('disk-list');
+            diskContainer.innerHTML = '';
+
+            if (!data.disks || data.disks.length === 0) {
+                diskContainer.innerHTML = '<div class="info-item"><span class="info-label">Диски не найдены</span></div>';
+            } else {
+                data.disks.forEach(disk => {
+                    const diskEl = document.createElement('div');
+                    diskEl.className = 'disk-item';
+                    diskEl.innerHTML = `
+                        <div class="disk-header">
+                            <span><strong>${disk.mount}</strong> (${disk.usedGB} / ${disk.totalGB} GB)</span>
+                            <span>${disk.percent}%</span>
+                        </div>
+                        <div class="progress-bar-bg" style="margin-bottom: 0;">
+                            <div class="progress-bar-fill" style="width: ${disk.percent}%; background: linear-gradient(90deg, #3b82f6, #8b5cf6);"></div>
+                        </div>
+                    `;
+                    diskContainer.appendChild(diskEl);
+                });
+            }
+        }
+
+        
+        connectStream();
+    </script>
+</body>
+</html>

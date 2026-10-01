@@ -34,6 +34,9 @@ app.get('/api/v1/info', (req, res) => {
     });
 });
 
+app.get('/', (req, res) => {
+    res.send('<h1>DevPulse API is running 🚀</h1><p>Try /api/health or /api/v1/info</p>');
+});
 
 app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
